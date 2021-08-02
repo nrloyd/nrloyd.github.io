@@ -1,0 +1,626 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="1894.6">
+  <style type="text/css">
+    span.s1 {font-kerning: none}
+  </style>
+</head>
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js'></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<!--<style> rect {fill: lightblue; stroke: black; }</style>-->
+<style>
+.chart circle { fill: steelblue; }
+#tooltip {
+    opacity: 1;
+    position: absolute;
+    text-align: center;
+    width: 60px;
+    background: white;
+    border: 1px;
+    font-family: sans-serif;
+}
+</style>
+<style>
+	body {
+	  	font: 1rem/1.5 var(--bs-font-sans-serif);
+	}
+	div.d-flex{
+		margin: 10px !important;
+	}
+	.callout {}
+</style>
+<body onload='bars()'>
+<!--  <button onclick="change_scene('bar')">Pass/Run Ratio by Time</button>
+  <button onclick="change_scene('team')">Pass/Run Ratio by Team</button>
+  <button onclick="change_scene('scatter')">All Plays</button>
+</div>-->
+<div class="d-flex justify-content-center">
+	<h2 class="display-5">Pass and Run Play Frequency in the 2020 NFL Season</h2>
+</div>
+<div class="d-flex justify-content-center">
+	<div class="btn-group btn-group-lg" role="group" id="scene-select" aria-label="Basic radio toggle button group">
+	  <input type="radio" class="btn-check" name="scene-select" id="scene1" autocomplete="off" checked onclick="change_scene('bar')">
+	  <label class="btn btn-outline-primary" for="scene1">Pass/Run Ratio by Time</label>
+
+	  <input type="radio" class="btn-check" name="scene-select" id="scene2" autocomplete="off" onclick="change_scene('team')">
+	  <label class="btn btn-outline-primary" for="scene2">Pass/Run Ratio by Team</label>
+
+	  <input type="radio" class="btn-check" name="scene-select" id="scene3" autocomplete="off" onclick="change_scene('scatter')">
+	  <label class="btn btn-outline-primary" for="scene3">All plays</label>
+	</div>
+</div>
+<!--div class="container" id="select">
+	<nav class="nav">
+		<div class="nav-group">
+			<form class="nav-toggle" onchange="change_scene(this)">
+				<input class = "toggle-radio" id="toggle-scatter" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-scatter">
+					<span class="toggle-label-text">Scatter</span>
+				</label>
+				<input class = "toggle-radio" id="toggle-bar" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-bar">
+					<span class="toggle-label-text">Bar</span>
+				</label>
+				<input class = "toggle-radio" id="toggle-team" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-team">
+					<span class="toggle-label-text">Team</span>
+				</label>
+			</form>
+		</div>
+	</nav>
+</div>-->
+<!--<div class="container" id="play-type-select" style="display:none;">
+	<nav class="nav">
+		<div class="nav-group">
+			<form class="nav-toggle" onchange="change_play_type()">
+				<input class = "toggle-radio" id="toggle-pass" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-pass">
+					<span class="toggle-label-text">Only passes</span>
+				</label>
+				<input class = "toggle-radio" id="toggle-run" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-run">
+					<span class="toggle-label-text">Only runs</span>
+				</label>
+				<input class = "toggle-radio" id="toggle-all" type="radio" name="nav-toggle">
+				<label class="toggle-label" for="toggle-all">
+					<span class="toggle-label-text">All plays</span>
+				</label>
+			</form>
+		</div>
+	</nav>
+</div>-->
+<div class="d-flex justify-content-center">
+	<div id="infotext" class="card" style="width: 30rem;"></div>
+</div>
+<div class="d-flex justify-content-center">
+	<div class="btn-group btn-group" role="group" id="play-type-select" aria-label="Basic radio toggle button group">
+	  <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" onclick="change_play_type()">
+	  <label class="btn btn-outline-primary" for="btnradio1">Only passes</label>
+
+	  <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" onclick="change_play_type()">
+	  <label class="btn btn-outline-primary" for="btnradio2">Only runs</label>
+
+	  <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off" checked onclick="change_play_type()">
+	  <label class="btn btn-outline-primary" for="btnradio3">All plays</label>
+	</div>
+	<select name="teams" id="teams" onchange="change_team_filter(this)" style="display:none;">
+	  <option value="all">All Teams</option>
+	  <option value="ARI">Arizona Cardinals</option>
+	  <option value="ATL">Atlanta Falcons</option>
+	  <option value="BAL">Baltimore Ravens</option>
+	  <option value="BUF">Buffalo Bills</option>
+	  <option value="CAR">Carolina Panthers</option>
+	  <option value="CHI">Chicago Bears</option>
+	  <option value="CIN">Cincinnati Bengals</option>
+	  <option value="CLE">Cleveland Browns</option>
+	  <option value="DAL">Dallas Cowboys</option>
+	  <option value="DEN">Denver Broncos</option>
+	  <option value="DET">Detroit Lions</option>
+	  <option value="GB">Green Bay Packers</option>
+	  <option value="HOU">Houston Texans</option>
+	  <option value="IND">Indianapolis Colts</option>
+	  <option value="JAX">Jacksonville Jaguars</option>
+	  <option value="KC">Kansas City Chiefs</option>
+	  <option value="LA">Los Angeles Rams</option>
+	  <option value="LAC">Los Angeles Chargers</option>
+	  <option value="LV">Las Vegas Raiders</option>
+	  <option value="MIA">Miami Dolphins</option>
+	  <option value="MIN">Minnesota Vikings</option>
+	  <option value="NE">New England Patriots</option>
+	  <option value="NO">New Orleans Saints</option>
+	  <option value="NYG">New York Giants</option>
+	  <option value="NYJ">New York Jets</option>
+	  <option value="PHI">Philadelphia Eagles</option>
+	  <option value="PIT">Pittsburgh Steelers</option>
+	  <option value="SEA">Seattle Seahawks</option>
+	  <option value="SF">San Francisco 49ers</option>
+	  <option value="TB">Tampa Bay Buccaneers</option>
+	  <option value="TEN">Tennessee Titans</option>
+	  <option value="WAS">Washington Football Team</option>
+	</select>
+</div>
+<div class="d-flex justify-content-center">
+	<svg width=1100 height=550>
+	</svg>
+	<div id="tooltip" opacity=0></div>
+</div>
+<script>
+	var width = 900;
+	var height = 400;
+	var margin = 80;
+	var play_filter = function(d) { return (d.play_type == "pass") || (d.play_type == "run"); };
+	var team_filter = function(d) { return (d.posteam != "NA"); };
+	var all_data;
+	var bar_data;
+	var team_data;
+	var teams = ["all","ARI","ATL","BAL","BUF","CAR","CHI","CIN","CLE","DAL","DEN","DET","GB","HOU","IND","JAX","KC","LA","LAC","LV","MIA","MIN","NE","NO","NYG","NYJ","PHI","PIT","SEA","SF","TB","TEN","WAS"];
+	var tooltip = d3.select("#tooltip");
+	var infotext = d3.select("#infotext")
+	console.log(tooltip.empty())
+	//document.getElementById("toggle-bar").checked = true
+	//document.getElementById("toggle-all").checked = true
+	//document.getElementById("play-type-select").style.display = "none";
+	document.getElementById("play-type-select").style.display = "none";
+	document.getElementById("teams").style.display = "none";
+</script>
+<script>
+	async function scatter() {
+		tooltip.style("opacity",0);
+
+		infotext.html("Each dot represents a play. As before, points further to the left represent plays that happened earlier in the game. The y-axis represents the yards gained on the play. Hover over any point to see a summary of the play. Use the buttons to filter by pass or run, and use the dropdown menu to view the plays for any one team. There's a point for every pass and run play in the whole season, so it may take a minute to load.");
+
+		d3.select("svg").selectAll("*").remove();
+
+		//all_data = await d3.csv('pbp_mod.csv');
+		if(all_data == null) {
+			all_data = await d3.csv('pbp_mod.csv');
+		}
+		const data = all_data.filter(play_filter).filter(team_filter);
+		var margin = 80;
+		var x = d3.scaleLinear().domain([1,3600]).range([width,0]); //also y
+		var yy = d3.scaleLinear().domain([0,100]).range([height,0]);
+		var color = d3.scaleOrdinal().domain(['pass','run']).range(['purple', 'orange']);
+	
+		var chart = d3.select('svg');
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll("circle").data(data).enter().append("circle")
+		.attr("cx", function(d,i) { return x(d.game_seconds_remaining); })
+		.attr("cy", function(d,i) { return yy(d.yards_gained); })
+		.attr("r", 3)
+		.attr("fill",function(d,i) { return color(d.play_type) })
+		.style("opacity", 0.5)
+		.on("mouseenter", function(d,i) {
+			tooltip.style("opacity",0.75)
+			//.style("left","179px")
+			//.style("top","483px")
+			.style("left",(d3.event.pageX)+"px")
+			.style("top",(d3.event.pageY)+"px")
+			.style("width","240px")
+			.html(d.posteam + " vs " + d.defteam + ": " + d.desc);
+			//console.log("Item #"+i+" is "+d);
+		});
+
+		chart.append("g")
+		.attr("transform", "translate(" + margin + "," + margin + ")")
+		.call(d3.axisLeft(yy).tickValues([0, 20, 40, 60, 80, 100]).tickFormat(d3.format("~s")));
+
+		chart.append("g")
+		.attr("transform", "translate(" + margin + "," + (margin+height) + ")")
+		.call(d3.axisBottom(x).tickValues([0, 900, 1800, 2700, 3600]).tickFormat(d3.format("~s")));
+
+		chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", height + margin + 45)
+    	.text("Game time remaining (seconds)");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("transform", "rotate(-90)")
+    	//.attr("y", -margin + 20)
+    	//.attr("x", -margin)
+    	.attr("y", margin - 45)
+    	.attr("x", - (height/2) - margin)
+    	.text("Yards gained");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", margin - 10)
+    	.text("Yards gained on every pass and run play (2020 NFL season)");
+
+  		chart.append("rect").attr("x",width + 100).attr("y",(height/2) - 20).attr("width",100).attr("height",100).attr("fill","white").attr("stroke","black");
+		chart.append("circle").attr("cx",width + 120).attr("cy",(height/2)+30).attr("r",5).attr("fill","orange").style("opacity", 0.5);
+		chart.append("circle").attr("cx",width + 120).attr("cy",(height/2)+55).attr("r",5).attr("fill","purple").style("opacity", 0.5);
+		chart.append("text").attr("x",width + 160).attr("y", height/2+35).attr("text-anchor", "middle").text("Runs");
+		chart.append("text").attr("x",width + 160).attr("y", height/2+60).attr("text-anchor", "middle").text("Passes");
+		chart.append("text").attr("x",width + 150).attr("y", height/2).attr("text-anchor", "middle").text("Key");
+	}
+</script>
+<script>
+	async function change_filter_pass() {
+		play_filter = function(d) { return (d.play_type == "pass"); };
+		scatter();
+	}
+</script>
+<script>
+	async function change_filter_run() {
+		play_filter = function(d) { return (d.play_type == "run"); };
+		scatter();
+	}
+</script>
+<script>
+	async function change_filter_both() {
+		play_filter = function(d) { return (d.play_type == "pass") || (d.play_type == "run"); };
+		scatter();
+	}
+</script>
+<script>
+	async function change_team_filter(dropdown) {
+		if(dropdown.selectedIndex == 0) {
+			team_filter = function(d) { return (d.posteam != "NA"); };
+		}
+		else {
+			team_filter = function(d) { return d.posteam == teams[dropdown.selectedIndex]; };
+		}
+		scatter();
+	}
+</script>
+<script>
+	async function change_scene(selection) {
+		//if(document.getElementById("toggle-scatter").checked == true) {
+		//	document.getElementById("play-type-select").style.display = "block";
+		//	document.getElementById("teams").style.display = "block";
+		//	scatter()
+		//} else if(document.getElementById("toggle-bar").checked == true) {
+		//	document.getElementById("play-type-select").style.display = "none";
+		//	document.getElementById("teams").style.display = "none";
+		//	bars()
+		//} else {
+		//	document.getElementById("play-type-select").style.display = "none";
+		//	document.getElementById("teams").style.display = "none";
+		//	bars_by_team()
+		//}
+		if(selection == 'bar') {
+			document.getElementById("play-type-select").style.display = "none";
+			document.getElementById("teams").style.display = "none";
+			bars()
+		} else if(selection == 'team') {
+			document.getElementById("play-type-select").style.display = "none";
+			document.getElementById("teams").style.display = "none";
+			bars_by_team()
+		} else {
+			document.getElementById("play-type-select").style.display = "block";
+			document.getElementById("teams").style.display = "block";
+			scatter()
+		}
+	}
+</script>
+<script>
+	async function change_play_type(selection) {
+		if(document.getElementById("btnradio1").checked == true) {
+			change_filter_pass()
+		} else if(document.getElementById("btnradio2").checked == true) {
+			change_filter_run()
+		} else {
+			change_filter_both()
+		}
+	}
+</script>
+<script>
+	async function bars() {
+		tooltip.style("opacity",0);
+
+		infotext.html("Each bar represents the proportion of passes and runs within a certain minute of game time. For example, the '13' bar represents all of the pass and run plays with 13:59-13:00 left on the game clock. Hover over any bar to see more specific play counts.");
+
+		if(bar_data == null){
+			bar_data = await d3.csv('frequencies.csv');
+		}
+		var bar_filter = function(d) { return (d.team == "all"); };
+		data = bar_data.filter(bar_filter);
+		var data2 = [200, 15, 100, 15, 15];
+		var width = 900;
+		var height = 400;
+		var margin = 80;
+
+		d3.select("svg").selectAll("*").remove();
+
+		//var play_filter = function(d) { return (d.play_type == "pass") || (d.play_type == "run"); };
+		//var team_filter = function(d) { return (d.posteam != "NA"); };
+		//var all_data;
+		//var teams = ["all","ARI","ATL","BAL","BUF","CAR","CHI","CIN","CLE","DAL","DEN","DET","GB","HOU","IND","JAX","KC","LA","LAC","LV","MIA","MIN","NE","NO","NYG","NYJ","PHI","PIT","SEA","SF","TB","TEN","WAS"];
+		//var tooltip = d3.select("#tooltip");
+		//console.log(tooltip.empty())
+		var x = d3.scaleBand().domain(d3.range(61)).range([0,width]);
+		var y = d3.scaleLinear().domain([0,1]).range([height,0]);
+		var chart = d3.select("svg");
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll("rect").data(data).enter().append("rect")
+		.attr("x",function(d,i) { return (60 - i) * x.bandwidth(); })
+		.attr("y",function(d,i) { return y(parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))); })
+		.attr("width",x.bandwidth())
+		.attr("height",function(d,i) { return height - y(parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))) })
+		.attr("fill","purple")
+		.attr("stroke","black")
+		.on("mouseenter", function(d,i) {
+			tooltip.style("opacity",0.75)
+			//.style("left","179px")
+			//.style("top","483px")
+			.style("left",(d3.event.pageX)+"px")
+			.style("top",(d3.event.pageY)+"px")
+			.style("width","120px")
+			.html(d.passes + " Pass plays\n" + d.runs + " Run plays\n" + (100*parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))).toFixed() + "% Passes");
+		});
+
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll("rect").data(data).enter().append("rect")
+		.attr("x",function(d,i) { return (60 - i) * x.bandwidth(); })
+		.attr("y",0)
+		.attr("width",x.bandwidth())
+		.attr("height",function(d,i) { return y((parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs)))); })
+		.attr("fill","orange")
+		.attr("stroke","black")
+		.on("mouseenter", function(d,i) {
+			tooltip.style("opacity",0.75)
+			//.style("left","179px")
+			//.style("top","483px")
+			.style("left",(d3.event.pageX)+"px")
+			.style("top",(d3.event.pageY)+"px")
+			.style("width","120px")
+			.html(d.passes + " Pass plays\n" + d.runs + " Run plays\n" + (100*parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))).toFixed() + "% Passes");
+		});
+
+		chart.append("rect").attr("x",width + 100).attr("y",(height/2) - 30).attr("width",100).attr("height",300).attr("fill","white").attr("stroke","black");
+		chart.append("rect").attr("x",width + 110).attr("y",(height/2)).attr("width",x.bandwidth()).attr("height",100).attr("fill","orange").attr("stroke","black");
+		chart.append("rect").attr("x",width + 110).attr("y",(height/2)+100).attr("width",x.bandwidth()).attr("height",150).attr("fill","purple").attr("stroke","black");
+		chart.append("text").attr("x",width + 160).attr("y", height/2+50).attr("text-anchor", "middle").text("Runs");
+		chart.append("text").attr("x",width + 160).attr("y", height/2+175).attr("text-anchor", "middle").text("Passes");
+		chart.append("text").attr("x",width + 150).attr("y", height/2 - 10).attr("text-anchor", "middle").text("Key");
+
+		chart.append("g")
+		.attr("transform", "translate(" + margin + "," + margin + ")")
+		.call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+
+		var ticks = ["60", "59", "58", "57", "56", "55", "54", "53", "52", "51", "50", "49", "48", "47", "46", "45", "44", "43", "42", "41", "40", "39", "38", "37", "36", "35", "34", "33", "32", "31", "30", "29", "28", "27", "26", "25", "24", "23", "22", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0"];
+
+		chart.append("g")
+		.attr("transform", "translate(" + margin + "," + (margin+height) + ")")
+		.call(d3.axisBottom(x).tickFormat((d,i)=>ticks[i]))
+		;
+		//.tickValues(d3.range(60, -1, -1));
+
+		//chart.on("mouseleave", function() {
+		//	tooltip.style("opacity",0);
+		//})
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", height + margin + 35)
+    	.text("Game time remaining (minutes)");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("transform", "rotate(-90)")
+    	//.attr("y", -margin + 20)
+    	//.attr("x", -margin)
+    	.attr("y", margin - 45)
+    	.attr("x", - (height/2) - margin)
+    	.text("Percentage of pass plays");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", margin - 10)
+    	.text("Pass/Run Ratio by Game Time");
+
+		//const type = d3.annotationCustomType(
+		//  d3.annotationLabel, 
+		//  {"className":"custom",
+		//    "note":{"align":"middle",
+		//    "orientation":"leftRight"}})
+		const type = d3.annotationCalloutElbow;
+		const annotations = [{
+		  note: {
+		    label: "Teams pass a lot at the end of each half",
+		    bgPadding: 0,
+		    //title: "Annotations :)"
+		  },
+		  //data: { date: "18-Sep-09", close: 185.02 },
+		  //data: { min_remaining: 30},
+		  className: "show-bg",
+		  dy: 137,
+		  dx: 172,
+		  x: margin + 450,
+		  y: margin + 90
+		},
+		{
+		  note: {
+		    label: "",
+		    bgPadding: 20,
+		    //title: "Annotations :)"
+		  },
+		  //data: { date: "18-Sep-09", close: 185.02 },
+		  //data: { min_remaining: 30},
+		  className: "show-bg",
+		  dy: 152,
+		  dx: -171,
+		  x: margin + 893,
+		  y: margin + 75
+		}
+		]
+		const makeAnnotations = d3.annotation()
+		  .notePadding(5)
+		  .type(type)
+		  .annotations(annotations)
+    	chart.append("g")
+    	.attr("class", "annotation-group")
+  		.call(makeAnnotations);
+	}
+</script>
+<script>
+	async function bars_by_team() {
+		tooltip.style("opacity",0);
+
+		infotext.html("Each bar represents the proportion of passes and runs for a certain team, over the entire 2020 NFL season. Hover over any bar to see more specific play counts.");
+
+		if(team_data == null){
+			team_data = await d3.csv('teamfreq.csv');
+		}
+		var team_filter = function(d) { return (d.team != "all"); };
+		data = team_data.filter(team_filter)
+		.slice().sort((a,b) => d3.ascending((parseFloat(a.passes) / (parseFloat(a.passes) + parseFloat(a.runs))), (parseFloat(b.passes) / (parseFloat(b.passes) + parseFloat(b.runs)))));
+		var width = 900;
+		var height = 400;
+		var margin = 80;
+
+		d3.select("svg").selectAll("*").remove();
+
+		var x = d3.scaleBand().domain(d3.range(32)).range([0,width]);
+		var y = d3.scaleLinear().domain([0,1]).range([height,0]);
+		var chart = d3.select("svg");
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll("rect").data(data).enter().append("rect")
+		.attr("x",function(d,i) { console.log(d.team); console.log((31 - i) * x.bandwidth()); return (31 - i) * x.bandwidth(); })
+		.attr("y",function(d,i) { console.log(d.team); console.log(y(parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs)))); return y(parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))); })
+		.attr("width",x.bandwidth())
+		.attr("height",function(d,i) { return height - y(parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))) })
+		.attr("fill","purple")
+		.attr("stroke","black")
+		.on("mouseenter", function(d,i) {
+			tooltip.style("opacity",0.75)
+			//.style("left","179px")
+			//.style("top","483px")
+			.style("left",(d3.event.pageX)+"px")
+			.style("top",(d3.event.pageY)+"px")
+			.style("width","120px")
+			.html(d.team + "<br />" + d.passes + " Pass plays\n" + d.runs + " Run plays\n" + (100*parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))).toFixed() + "% Passes");
+		});
+
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll("rect").data(data).enter().append("rect")
+		.attr("x",function(d,i) { return (31 - i) * x.bandwidth(); })
+		.attr("y",0)
+		.attr("width",x.bandwidth())
+		.attr("height",function(d,i) { return y((parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs)))); })
+		.attr("fill","orange")
+		.attr("stroke","black")
+		.on("mouseenter", function(d,i) {
+			tooltip.style("opacity",0.75)
+			//.style("left","179px")
+			//.style("top","483px")
+			.style("left",(d3.event.pageX)+"px")
+			.style("top",(d3.event.pageY)+"px")
+			.style("width","120px")
+			.html(d.team + "<br />" + d.passes + " Pass plays\n" + d.runs + " Run plays\n" + (100*parseFloat(d.passes) / (parseFloat(d.passes) + parseFloat(d.runs))).toFixed() + "% Passes");
+		});
+
+		chart.append("g")
+		.attr("transform", "translate(" + margin + "," + margin + ")")
+		.call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+
+		var ticks = ["31", "30", "29", "28", "27", "26", "25", "24", "23", "22", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0"];
+
+		//chart.append("g")
+		//.attr("transform", "translate(" + margin + "," + (margin+height) + ")")
+		//.call(d3.axisBottom(x).tickFormat((d,i)=>d.team))
+		//;
+
+		chart.append("g")
+		.attr("transform","translate("+margin+","+margin+")")
+		.selectAll(".text").data(data).enter().append("text")
+		//.attr("class","label")
+		.attr("x",function(d,i) { return (31.5 - i) * x.bandwidth(); })
+		.attr("y",410)
+		.attr("font-family", "sans-serif")
+		//.attr("textLength",function(d,i) { return x.bandwidth() / 1.5; })
+		.style("font-size", "10px")
+		//.attr("dy", ".25em")
+		.attr("text-anchor", "middle")
+		.text(function(d) { return d.team; });
+		//.tickValues(d3.range(60, -1, -1));
+
+		chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", height + margin + 35)
+    	.text("Team");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("transform", "rotate(-90)")
+    	//.attr("y", -margin + 20)
+    	//.attr("x", -margin)
+    	.attr("y", margin - 45)
+    	.attr("x", - (height/2) - margin)
+    	.text("Percentage of pass plays");
+
+    	chart.append("text")
+    	.attr("text-anchor", "middle")
+    	.attr("x", (width/2) + margin)
+    	.attr("y", margin - 10)
+    	.text("Pass/Run Ratio by Team");
+
+    	const type = d3.annotationCustomType(
+		  d3.annotationLabel, 
+		  {"className":"custom",
+		    "note":{"align":"middle",
+		    "lineType":"vertical"}})
+		const annotations = [{
+		  note: {
+		    label: "Only the Patriots and Ravens ran more than they passed",
+		    bgPadding: 20,
+		    //title: "Annotations :)"
+		  },
+		  //data: { date: "18-Sep-09", close: 185.02 },
+		  //data: { min_remaining: 30},
+		  className: "show-bg",
+		  dy: 80,
+		  dx: -143,
+		  x: margin + 858,
+		  y: margin + 213
+		},
+		{
+		  note: {
+		    label: "",
+		    bgPadding: 20,
+		    //title: "Annotations :)"
+		  },
+		  //data: { date: "18-Sep-09", close: 185.02 },
+		  //data: { min_remaining: 30},
+		  className: "show-bg",
+		  dy: 95,
+		  dx: -171,
+		  x: margin + 886,
+		  y: margin + 228
+		}
+		]
+		const makeAnnotations = d3.annotation()
+		  .notePadding(15)
+		  .type(type)
+		  .annotations(annotations)
+    	chart.append("g")
+    	.attr("class", "annotation-group")
+  		.call(makeAnnotations);
+
+  		chart.append("rect").attr("x",width + 100).attr("y",(height/2) - 30).attr("width",100).attr("height",300).attr("fill","white").attr("stroke","black");
+		chart.append("rect").attr("x",width + 110).attr("y",(height/2)).attr("width",x.bandwidth()).attr("height",100).attr("fill","orange").attr("stroke","black");
+		chart.append("rect").attr("x",width + 110).attr("y",(height/2)+100).attr("width",x.bandwidth()).attr("height",150).attr("fill","purple").attr("stroke","black");
+		chart.append("text").attr("x",width + 170).attr("y", height/2+50).attr("text-anchor", "middle").text("Runs");
+		chart.append("text").attr("x",width + 170).attr("y", height/2+175).attr("text-anchor", "middle").text("Passes");
+		chart.append("text").attr("x",width + 150).attr("y", height/2 - 10).attr("text-anchor", "middle").text("Key");
+	}
+</script>
+</body>
+</html>
